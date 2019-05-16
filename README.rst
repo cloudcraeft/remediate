@@ -1,4 +1,4 @@
-.. image:: remediate.png
+REMEDIATE
 ========================
 remediate is a wrapper to fire independent runbooks which were originally 
 python code create for aws lambdas. Without touching them they have been
@@ -10,3 +10,4 @@ individual runbooks were meant for running in a serverless environment.
 Therefore some interesting strategies are used to capture the needed info.
 Mainly string processing.
 
+.. image:: remediate.png
