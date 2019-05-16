@@ -5,6 +5,10 @@ import sys
 
 
 class Client:
+    """
+    Client represents and AWS Client which can call and capture responses from AWS APIs via runbooks which
+    contains the actual logic.
+    """
     def __init__(self, access_key_id, secret_access_key, region_name):
         self.access_key_id = access_key_id
         self.secret_access_key = secret_access_key
