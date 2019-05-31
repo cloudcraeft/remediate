@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setup(
     name="remediate",
-    version="0.0.14",
+    version="0.0.15",
     packages=['remediate','remediate/runbook'],
     include_package_data=True,
     install_requires=['boto3'],
