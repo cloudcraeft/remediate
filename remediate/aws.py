@@ -1,12 +1,53 @@
 import boto3
 from importlib import import_module
 from io import StringIO
+import json
 import sys
 
 
 class ArgumentError(Exception):
     def __init__(self, message):
         self.message = message
+
+
+class RunbookReturn:
+    """The return values from executing a runbook
+
+    """
+    def __init__(self, resource_id, region, ret_val):
+        self.resource_id = resource_id
+        self.region = region
+        self.orig = ret_val
+        self._lines = ret_val.splitlines()
+
+    @property
+    def status(self):
+        return self._lines[-1].split(":")[0]
+
+    @property
+    def runbook_id(self):
+        return self._lines[-1].split(":")[1]
+
+    @property
+    def lines(self):
+        return self._lines
+
+    def _struct(self):
+        return {
+            'Status': self.status,
+            'Response': self.orig,
+            'RunbookId': self.runbook_id,
+            'ResourceId': self.resource_id,
+            'Region': self.region
+        }
+
+    @property
+    def json(self):
+        return json.dumps(self._struct())
+
+    @property
+    def return_value(self):
+        return self._struct
 
 
 class Client:
@@ -79,14 +120,12 @@ class Client:
         sys.stdout = capture
         try:
             runbook = import_module('remediate.runbook.' + runbook_id)
+            runbook.remediate(session, incident, None)
+            print(f"DONE:{runbook_id}")
         except ArgumentError as e:
             print(f'ERROR:Bad Arguments {e.message}')
         except Exception as e:
             print(f'ERROR:{runbook_id} ({incident}) {str(e)}')
-        else:
-            runbook.remediate(session, incident, None)
-            print(f"DONE:{runbook_id}")
         finally:
             sys.stdout = old_out
-            result_lines = capture.getvalue()
-            return result_lines
+            return RunbookReturn(incident['resource_id'], incident['region'], capture.getvalue())
