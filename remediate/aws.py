@@ -12,13 +12,10 @@ class ArgumentError(Exception):
 class Client:
     """
     Client represents an AWS Client which can call and capture responses from AWS APIs via runbooks which
-    contains the actual logic.
+    contain the actual logic.
     """
     def __init__(self, **kwargs):
         self.args = kwargs
-        self.capture = StringIO()
-        self.old_out = sys.stdout
-        sys.stdout = self.capture
 
     def get_session(self):
         region = self.args['region']
@@ -35,7 +32,6 @@ class Client:
                 sts_response = sts_client.assume_role(
                     RoleArn=role_arn,
                     RoleSessionName=role_session_name,
-                    Policy=self.args['role_policy'],
                     DurationSeconds=self.args['session_duration']
                 )
                 session = boto3.session.Session(
@@ -59,7 +55,6 @@ class Client:
                 sts_response = sts_client.assume_role(
                     RoleArn=role_arn,
                     RoleSessionName=role_session_name,
-                    Policy=self.args['role_policy'],
                     DurationSeconds=self.args['session_duration']
                 )
                 session = boto3.session.Session(
@@ -79,6 +74,9 @@ class Client:
 
     def run(self, runbook_id, incident):
         session = self.get_session()
+        capture = StringIO()
+        old_out = sys.stdout
+        sys.stdout = capture
         try:
             runbook = import_module('remediate.runbook.' + runbook_id)
         except ArgumentError as e:
@@ -88,5 +86,7 @@ class Client:
         else:
             runbook.remediate(session, incident, None)
             print(f"DONE:{runbook_id}")
-        sys.stdout = self.old_out
-        return self.capture.getvalue()
+        finally:
+            sys.stdout = old_out
+            result_lines = capture.getvalue()
+            return result_lines
